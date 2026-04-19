@@ -72,7 +72,7 @@ export default function LoginScreen() {
   }, [])
 
   const finalizeLogin = async (d: any) => {
-    await saveTokens(d.access_token, d.refresh_token)
+    await saveTokens(d.access_token, d.refresh_token, d.trust_token)
     await SecureStore.setItemAsync('last_username', username)
     setUser(d.user)
     setAuthenticated(true)

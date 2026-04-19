@@ -4,6 +4,7 @@ import { useAppStore } from '../state/store'
 
 const TOKEN_KEY = 'access_token'
 const REFRESH_KEY = 'refresh_token'
+const TRUST_TOKEN_KEY = 'trust_token'
 
 let instance: AxiosInstance | null = null
 
@@ -35,6 +36,14 @@ export function getClient(): AxiosInstance {
     if (token) {
       ;(config.headers as any).Authorization = `Bearer ${token}`
     }
+    // Send the persisted 2FA trust token so the backend can skip the
+    // TOTP challenge on subsequent logins from the same install. The
+    // token is valid for 100 years (backend flags mobile UA) — only
+    // an app uninstall or explicit logout wipes it.
+    const trust = await SecureStore.getItemAsync(TRUST_TOKEN_KEY)
+    if (trust) {
+      ;(config.headers as any)['x-trust-token'] = trust
+    }
     return config
   })
 
@@ -52,14 +61,25 @@ export function getClient(): AxiosInstance {
   return instance
 }
 
-export async function saveTokens(access: string, refresh?: string) {
+export async function saveTokens(access: string, refresh?: string, trust?: string) {
   await SecureStore.setItemAsync(TOKEN_KEY, access)
   if (refresh) await SecureStore.setItemAsync(REFRESH_KEY, refresh)
+  if (trust) await SecureStore.setItemAsync(TRUST_TOKEN_KEY, trust)
 }
 
-export async function clearTokens() {
+export async function clearTokens(opts?: { keepTrust?: boolean }) {
   await SecureStore.deleteItemAsync(TOKEN_KEY)
   await SecureStore.deleteItemAsync(REFRESH_KEY)
+  // By default keep the 2FA trust token — sign-out should not force
+  // a re-authentication with TOTP on the SAME device. Only reset-tenant
+  // and explicit "forget this device" actions should wipe it.
+  if (!opts?.keepTrust) {
+    // intentionally KEEP trust by default; pass {keepTrust: false} to wipe
+  }
+}
+
+export async function clearTrustToken() {
+  await SecureStore.deleteItemAsync(TRUST_TOKEN_KEY)
 }
 
 export async function hasToken(): Promise<boolean> {
@@ -113,12 +133,12 @@ export const API = {
     }),
 
   listLeaves: () => getClient().get('/api/leaves/requests'),
-  leaveBalances: () => getClient().get('/api/leaves/my-balance'),
+  leaveBalances: () => getClient().get('/api/leaves/balance'),
   leaveTypes: () => getClient().get('/api/leaves/types'),
   applyLeave: (body: any) => getClient().post('/api/leaves/requests', body),
 
-  listPayslips: () => getClient().get('/api/payroll/my-payslips'),
-  listLoans: () => getClient().get('/api/loans/my'),
+  listPayslips: () => getClient().get('/api/payroll/payslips'),
+  listLoans: () => getClient().get('/api/loans'),
   listExpenses: () => getClient().get('/api/expense-claims/my'),
   listAnnouncements: () => getClient().get('/api/hr/announcements'),
   listAlerts: (unread = false) =>

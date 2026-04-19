@@ -2,17 +2,24 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { View, Text, ScrollView, RefreshControl, StyleSheet } from 'react-native'
 import { useAppStore } from '../state/store'
 import { API } from '../api/client'
+import ScreenState from '../components/ScreenState'
 
 export default function AnnouncementsScreen() {
   const theme = useAppStore((s) => s.theme)
   const [items, setItems] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setError(null)
     try {
       const r = await API.listAnnouncements()
       setItems(r.data || [])
-    } catch {}
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e?.message || 'Could not load announcements.')
+    }
+    setLoaded(true)
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -20,20 +27,26 @@ export default function AnnouncementsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={{ flexGrow: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} />}
     >
-      <View style={{ padding: 16 }}>
-        <Text style={styles.h1}>Announcements</Text>
-        {items.length === 0 && <Text style={styles.empty}>No announcements yet</Text>}
-        {items.map((a: any) => (
-          <View key={a.id} style={styles.card}>
-            <Text style={[styles.title, { color: theme.primary }]}>{a.title}</Text>
-            {a.created_by_name && <Text style={styles.meta}>By {a.created_by_name}</Text>}
-            {a.created_at && <Text style={styles.meta}>{new Date(a.created_at).toLocaleString('en-IN')}</Text>}
-            <Text style={styles.body}>{a.content}</Text>
-          </View>
-        ))}
-      </View>
+      <ScreenState loading={!loaded} error={error} onRetry={load}>
+        <View style={{ padding: 16 }}>
+          <Text style={styles.h1}>Announcements</Text>
+          {items.length === 0 ? (
+            <Text style={styles.empty}>No announcements yet</Text>
+          ) : (
+            items.map((a: any) => (
+              <View key={a.id} style={styles.card}>
+                <Text style={[styles.title, { color: theme.primary }]}>{a.title}</Text>
+                {a.created_by_name && <Text style={styles.meta}>By {a.created_by_name}</Text>}
+                {a.created_at && <Text style={styles.meta}>{new Date(a.created_at).toLocaleString('en-IN')}</Text>}
+                <Text style={styles.body}>{a.content}</Text>
+              </View>
+            ))
+          )}
+        </View>
+      </ScreenState>
     </ScrollView>
   )
 }

@@ -2,17 +2,24 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { View, Text, ScrollView, RefreshControl, StyleSheet } from 'react-native'
 import { useAppStore } from '../state/store'
 import { API } from '../api/client'
+import ScreenState from '../components/ScreenState'
 
 export default function ExpensesScreen() {
   const theme = useAppStore((s) => s.theme)
   const [claims, setClaims] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setError(null)
     try {
       const r = await API.listExpenses()
       setClaims(r.data || [])
-    } catch {}
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e?.message || 'Could not load expense claims.')
+    }
+    setLoaded(true)
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -20,23 +27,29 @@ export default function ExpensesScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={{ flexGrow: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} />}
     >
-      <View style={{ padding: 16 }}>
-        <Text style={styles.h1}>Expense Claims</Text>
-        {claims.length === 0 && <Text style={styles.empty}>No expense claims yet</Text>}
-        {claims.map((c: any) => (
-          <View key={c.id} style={styles.card}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={styles.num}>{c.claim_number || `#${c.id}`}</Text>
-              <Text style={[styles.badge, statusStyle(c.status)]}>{(c.status || '').toUpperCase()}</Text>
-            </View>
-            <Text style={[styles.amount, { color: theme.primary }]}>₹{Number(c.total_amount || 0).toLocaleString('en-IN')}</Text>
-            <Text style={styles.desc} numberOfLines={2}>{c.description || '(No description)'}</Text>
-            <Text style={styles.date}>{c.claim_date}</Text>
-          </View>
-        ))}
-      </View>
+      <ScreenState loading={!loaded} error={error} onRetry={load}>
+        <View style={{ padding: 16 }}>
+          <Text style={styles.h1}>Expense Claims</Text>
+          {claims.length === 0 ? (
+            <Text style={styles.empty}>No expense claims yet</Text>
+          ) : (
+            claims.map((c: any) => (
+              <View key={c.id} style={styles.card}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={styles.num}>{c.claim_number || `#${c.id}`}</Text>
+                  <Text style={[styles.badge, statusStyle(c.status)]}>{(c.status || '').toUpperCase()}</Text>
+                </View>
+                <Text style={[styles.amount, { color: theme.primary }]}>₹{Number(c.total_amount || 0).toLocaleString('en-IN')}</Text>
+                <Text style={styles.desc} numberOfLines={2}>{c.description || '(No description)'}</Text>
+                <Text style={styles.date}>{c.claim_date}</Text>
+              </View>
+            ))
+          )}
+        </View>
+      </ScreenState>
     </ScrollView>
   )
 }

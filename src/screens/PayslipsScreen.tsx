@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as SecureStore from 'expo-secure-store'
 import { useAppStore } from '../state/store'
 import { API } from '../api/client'
+import ScreenState from '../components/ScreenState'
 
 export default function PayslipsScreen() {
   const theme = useAppStore((s) => s.theme)
@@ -11,12 +12,18 @@ export default function PayslipsScreen() {
   const [slips, setSlips] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const [downloading, setDownloading] = useState<number | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setError(null)
     try {
       const r = await API.listPayslips()
       setSlips(r.data || [])
-    } catch {}
+    } catch (e: any) {
+      setError(e?.response?.data?.detail || e?.message || 'Could not load payslips.')
+    }
+    setLoaded(true)
   }, [])
 
   useEffect(() => { load() }, [load])
@@ -26,7 +33,7 @@ export default function PayslipsScreen() {
     setDownloading(slip.id)
     try {
       const token = await SecureStore.getItemAsync('access_token')
-      const url = `${serverUrl.replace(/\/+$/, '')}/api/payroll/payslip/${slip.id}/pdf`
+      const url = `${serverUrl.replace(/\/+$/, '')}/api/payroll/payslips/${slip.id}/pdf`
       const filename = `payslip-${slip.year}-${String(slip.month).padStart(2, '0')}.pdf`
       const dest = `${FileSystem.documentDirectory}${filename}`
       const r = await FileSystem.downloadAsync(url, dest, {
@@ -51,28 +58,34 @@ export default function PayslipsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.background }}
+      contentContainerStyle={{ flexGrow: 1 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false) }} />}
     >
-      <View style={{ padding: 16 }}>
-        <Text style={styles.h1}>My Payslips</Text>
-        {slips.length === 0 && <Text style={styles.empty}>No payslips yet</Text>}
-        {slips.map((s: any) => (
-          <View key={s.id} style={styles.card}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title}>{monthName(s.month)} {s.year}</Text>
-              <Text style={styles.sub}>Net ₹{formatINR(s.net_salary)}</Text>
-              <Text style={styles.small}>Gross ₹{formatINR(s.gross_salary)} · Deductions ₹{formatINR(s.total_deductions)}</Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.dl, { backgroundColor: theme.primary }]}
-              onPress={() => download(s)}
-              disabled={downloading === s.id}
-            >
-              <Text style={styles.dlText}>{downloading === s.id ? '…' : 'PDF'}</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
+      <ScreenState loading={!loaded} error={error} onRetry={load}>
+        <View style={{ padding: 16 }}>
+          <Text style={styles.h1}>My Payslips</Text>
+          {slips.length === 0 ? (
+            <Text style={styles.empty}>No payslips generated yet</Text>
+          ) : (
+            slips.map((s: any) => (
+              <View key={s.id} style={styles.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.title}>{monthName(s.month)} {s.year}</Text>
+                  <Text style={styles.sub}>Net ₹{formatINR(s.net_salary)}</Text>
+                  <Text style={styles.small}>Gross ₹{formatINR(s.gross_salary)} · Deductions ₹{formatINR(s.total_deductions)}</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.dl, { backgroundColor: theme.primary }]}
+                  onPress={() => download(s)}
+                  disabled={downloading === s.id}
+                >
+                  <Text style={styles.dlText}>{downloading === s.id ? '…' : 'PDF'}</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </View>
+      </ScreenState>
     </ScrollView>
   )
 }
