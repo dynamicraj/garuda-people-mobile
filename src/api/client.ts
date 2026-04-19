@@ -7,9 +7,19 @@ const REFRESH_KEY = 'refresh_token'
 
 let instance: AxiosInstance | null = null
 
+// Chrome-like UA so servers fronted by Zscaler / Cloudflare-bot-protection
+// don't block us as "not a browser". Every on-prem HR deploy we've seen
+// sits behind some WAF — this header sidesteps them uniformly.
+const BROWSER_UA =
+  'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 ' +
+  '(KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36 GarudaPeople/3.0.0'
+
 export function getClient(): AxiosInstance {
   if (instance) return instance
-  instance = axios.create({ timeout: 15_000 })
+  instance = axios.create({
+    timeout: 15_000,
+    headers: { 'User-Agent': BROWSER_UA },
+  })
 
   instance.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
     const serverUrl = useAppStore.getState().serverUrl
@@ -19,9 +29,10 @@ export function getClient(): AxiosInstance {
       config.baseURL = undefined
       config.url = `${base}${path}`
     }
+    config.headers = config.headers || ({} as any)
+    ;(config.headers as any)['User-Agent'] = BROWSER_UA
     const token = await SecureStore.getItemAsync(TOKEN_KEY)
     if (token) {
-      config.headers = config.headers || ({} as any)
       ;(config.headers as any).Authorization = `Bearer ${token}`
     }
     return config
