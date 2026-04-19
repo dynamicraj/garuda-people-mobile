@@ -1,13 +1,21 @@
 /**
- * Expo Push notifications — registration, handler setup, token upload.
+ * Notification service — self-hosted.
  *
- * On iOS APNs handles delivery; on Android FCM HTTP v1. Both are
- * transparently routed by the Expo Push service; our mobile code only
- * deals with the Expo push token.
+ * We do NOT use the Expo Push service (exp.host) because that's a
+ * third-party runtime dependency. Instead:
+ *   - Local notifications (shown by the device) still go through
+ *     expo-notifications — that library just wraps the OS notification
+ *     APIs, no network. Safe.
+ *   - Push delivery uses a WebSocket the app opens to YOUR backend.
+ *     When the app is foregrounded it hears events over WS and fires a
+ *     local notification from client-side. This works fully offline-free
+ *     and relies only on your Traefik + FastAPI stack.
+ *   - Background delivery (when the app is killed): NOT possible without
+ *     either FCM (Google) or APNs (Apple) — both OSes lock it down.
+ *     Accept this tradeoff or opt into FCM later.
  */
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
-import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 import { API } from '../api/client'
 
@@ -29,25 +37,8 @@ export async function ensurePushPermissions(): Promise<boolean> {
   return (req as any).status === 'granted' || (req as any).granted === true
 }
 
-export async function getExpoPushToken(): Promise<string | null> {
-  try {
-    const projectId =
-      (Constants.expoConfig?.extra as any)?.eas?.projectId ||
-      (Constants.easConfig as any)?.projectId
-    // projectId is required in SDK ≥ 49 once the app is built with EAS.
-    // For Expo Go / dev clients it can be undefined — token still works.
-    const token = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined
-    )
-    return token.data
-  } catch {
-    return null
-  }
-}
-
 export async function registerForPush(deviceId: string, opts?: { appVersion?: string; osVersion?: string; deviceModel?: string }) {
-  const allowed = await ensurePushPermissions()
-  const token = allowed ? await getExpoPushToken() : null
+  await ensurePushPermissions()
 
   if (Platform.OS === 'android') {
     try {
@@ -60,19 +51,26 @@ export async function registerForPush(deviceId: string, opts?: { appVersion?: st
     } catch {}
   }
 
+  // Register the device with our own backend (no push token — WS delivery).
   try {
     await API.registerToken({
       device_id: deviceId,
-      expo_push_token: token || undefined,
       platform: Platform.OS as 'android' | 'ios',
       app_version: opts?.appVersion,
       os_version: opts?.osVersion,
       device_model: opts?.deviceModel,
     })
-  } catch {
-    // Retry handled by subsequent app launches
-  }
-  return token
+  } catch {}
+}
+
+/** Fire a local notification from within the app (when WS tells us to). */
+export async function fireLocalNotification(title: string, body: string, data: any = {}) {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: { title, body, data, sound: 'default' },
+      trigger: null,
+    })
+  } catch {}
 }
 
 /** Install default notification-tap router. Returns a cleanup fn. */

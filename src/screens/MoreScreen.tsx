@@ -6,6 +6,7 @@ import { API, clearTokens } from '../api/client'
 import * as SecureStore from 'expo-secure-store'
 import { getDeviceId } from '../services/device'
 import { stopBackgroundLocation } from '../services/tasks'
+import { stopNotificationsStream } from '../services/notifications-ws'
 
 type Row = { key: string; label: string; action: () => void; tint?: string }
 
@@ -28,6 +29,7 @@ export default function MoreScreen() {
             const did = await getDeviceId()
             await API.unregisterToken(did).catch(() => {})
           } catch {}
+          stopNotificationsStream()
           await stopBackgroundLocation().catch(() => {})
           await clearTokens()
           await SecureStore.deleteItemAsync('last_username')

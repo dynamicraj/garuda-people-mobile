@@ -13,6 +13,7 @@ import { API, saveTokens } from '../api/client'
 import { getDeviceId } from '../services/device'
 import { registerForPush } from '../services/push'
 import { ensureBackgroundSync } from '../services/tasks'
+import { startNotificationsStream } from '../services/notifications-ws'
 
 async function postLoginRegistration() {
   try {
@@ -23,6 +24,7 @@ async function postLoginRegistration() {
       deviceModel: Device.modelName || undefined,
     })
     await ensureBackgroundSync()
+    startNotificationsStream()
   } catch {
     // non-fatal
   }

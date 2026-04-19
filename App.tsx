@@ -9,6 +9,7 @@ import RootNavigation from './src/navigation'
 import { GARUDA_BLUE } from './src/theme'
 // Register background task handlers at module load — must not be deferred.
 import './src/services/tasks'
+import { startNotificationsStream } from './src/services/notifications-ws'
 
 export default function App() {
   const [booting, setBooting] = useState(true)
@@ -27,6 +28,7 @@ export default function App() {
             const me = await API.me()
             setUser(me.data)
             setAuthenticated(true)
+            startNotificationsStream()
           } catch {
             await SecureStore.deleteItemAsync('access_token')
             await SecureStore.deleteItemAsync('refresh_token')
