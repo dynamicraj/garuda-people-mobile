@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "doctor": "expo-doctor",
     "eas:login": "eas login",
-    "eas:init": "eas init --non-interactive",
+    "eas:whoami": "eas whoami",
+    "eas:init": "eas init",
     "build:android:preview": "eas build --platform android --profile preview --non-interactive",
     "build:android:production": "eas build --platform android --profile production --non-interactive",
     "build:ios:preview": "eas build --platform ios --profile preview --non-interactive",
@@ -53,6 +54,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.10",
+    "eas-cli": "^18.7.0",
     "typescript": "~5.9.2"
   },
   "private": true
