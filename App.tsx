@@ -7,6 +7,8 @@ import { useAppStore } from './src/state/store'
 import { API } from './src/api/client'
 import RootNavigation from './src/navigation'
 import { GARUDA_BLUE } from './src/theme'
+// Register background task handlers at module load — must not be deferred.
+import './src/services/tasks'
 
 export default function App() {
   const [booting, setBooting] = useState(true)

@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "garudapeople",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -16,7 +15,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#1e3a5f"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.garudayantra.people",
@@ -28,7 +29,11 @@
         "NSCameraUsageDescription": "Garuda People needs the camera to capture a selfie when you punch in/out.",
         "NSPhotoLibraryUsageDescription": "Garuda People needs photo access to upload a profile picture.",
         "NSFaceIDUsageDescription": "Garuda People uses Face ID to unlock the app quickly.",
-        "UIBackgroundModes": ["fetch", "location", "remote-notification"],
+        "UIBackgroundModes": [
+          "fetch",
+          "location",
+          "remote-notification"
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -39,7 +44,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e3a5f"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -88,7 +92,8 @@
         }
       ],
       "expo-sqlite",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker"
     ],
     "extra": {
       "eas": {

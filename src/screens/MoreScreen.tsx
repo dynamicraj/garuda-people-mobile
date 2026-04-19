@@ -1,10 +1,13 @@
 import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { useAppStore } from '../state/store'
-import { clearTokens } from '../api/client'
+import { API, clearTokens } from '../api/client'
 import * as SecureStore from 'expo-secure-store'
+import { getDeviceId } from '../services/device'
+import { stopBackgroundLocation } from '../services/tasks'
 
-type Row = { key: string; label: string; action: () => void }
+type Row = { key: string; label: string; action: () => void; tint?: string }
 
 export default function MoreScreen() {
   const theme = useAppStore((s) => s.theme)
@@ -12,6 +15,7 @@ export default function MoreScreen() {
   const resetTenant = useAppStore((s) => s.reset)
   const setAuthenticated = useAppStore((s) => s.setAuthenticated)
   const setUser = useAppStore((s) => s.setUser)
+  const nav = useNavigation<any>()
 
   const logout = async () => {
     Alert.alert('Sign out', 'You will need to sign in again next time.', [
@@ -20,6 +24,11 @@ export default function MoreScreen() {
         text: 'Sign out',
         style: 'destructive',
         onPress: async () => {
+          try {
+            const did = await getDeviceId()
+            await API.unregisterToken(did).catch(() => {})
+          } catch {}
+          await stopBackgroundLocation().catch(() => {})
           await clearTokens()
           await SecureStore.deleteItemAsync('last_username')
           setUser(null)
@@ -35,19 +44,26 @@ export default function MoreScreen() {
       'The app will revert to Garuda branding and you will need to enter the server URL again.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Disconnect', style: 'destructive', onPress: () => resetTenant() },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            await stopBackgroundLocation().catch(() => {})
+            await resetTenant()
+          },
+        },
       ]
     )
   }
 
   const rows: Row[] = [
-    { key: 'payslips', label: 'Payslips', action: () => Alert.alert('Coming in next build') },
-    { key: 'loans', label: 'Loans', action: () => Alert.alert('Coming in next build') },
-    { key: 'expenses', label: 'Expense Claims', action: () => Alert.alert('Coming in next build') },
-    { key: 'profile', label: 'My Profile', action: () => Alert.alert('Coming in next build') },
-    { key: 'notifications', label: 'Notifications', action: () => Alert.alert('Coming in next build') },
+    { key: 'profile', label: 'My Profile', action: () => nav.navigate('Profile') },
+    { key: 'payslips', label: 'Payslips', action: () => nav.navigate('Payslips') },
+    { key: 'loans', label: 'Loans', action: () => nav.navigate('Loans') },
+    { key: 'expenses', label: 'Expense Claims', action: () => nav.navigate('Expenses') },
+    { key: 'announcements', label: 'Announcements', action: () => nav.navigate('Announcements') },
     { key: 'reset', label: 'Change Server', action: resetServer },
-    { key: 'logout', label: 'Sign Out', action: logout },
+    { key: 'logout', label: 'Sign Out', action: logout, tint: '#ef4444' },
   ]
 
   return (
@@ -59,7 +75,7 @@ export default function MoreScreen() {
       <View style={{ padding: 12 }}>
         {rows.map((r) => (
           <TouchableOpacity key={r.key} style={styles.row} onPress={r.action}>
-            <Text style={[styles.rowText, r.key === 'logout' && { color: '#ef4444' }]}>{r.label}</Text>
+            <Text style={[styles.rowText, r.tint && { color: r.tint }]}>{r.label}</Text>
             <Text style={styles.chev}>›</Text>
           </TouchableOpacity>
         ))}

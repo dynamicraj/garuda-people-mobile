@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { View, Text, ScrollView, RefreshControl, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, ScrollView, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { useAppStore } from '../state/store'
 import { API } from '../api/client'
 
 export default function LeavesScreen() {
   const theme = useAppStore((s) => s.theme)
+  const nav = useNavigation<any>()
   const [balances, setBalances] = useState<any[]>([])
   const [requests, setRequests] = useState<any[]>([])
   const [refreshing, setRefreshing] = useState(false)
@@ -41,7 +43,7 @@ export default function LeavesScreen() {
 
         <TouchableOpacity
           style={[styles.applyBtn, { backgroundColor: theme.primary }]}
-          onPress={() => Alert.alert('Coming soon', 'Apply Leave form will be added in the next build.')}
+          onPress={() => nav.navigate('ApplyLeave')}
         >
           <Text style={styles.applyText}>+ Apply Leave</Text>
         </TouchableOpacity>

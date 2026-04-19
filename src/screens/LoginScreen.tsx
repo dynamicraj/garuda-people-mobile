@@ -5,9 +5,28 @@ import {
 } from 'react-native'
 import * as LocalAuthentication from 'expo-local-authentication'
 import * as SecureStore from 'expo-secure-store'
+import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { StatusBar } from 'expo-status-bar'
 import { useAppStore } from '../state/store'
 import { API, saveTokens } from '../api/client'
+import { getDeviceId } from '../services/device'
+import { registerForPush } from '../services/push'
+import { ensureBackgroundSync } from '../services/tasks'
+
+async function postLoginRegistration() {
+  try {
+    const did = await getDeviceId()
+    await registerForPush(did, {
+      appVersion: (Constants.expoConfig?.version as string) || '3.0.0',
+      osVersion: Device.osVersion || undefined,
+      deviceModel: Device.modelName || undefined,
+    })
+    await ensureBackgroundSync()
+  } catch {
+    // non-fatal
+  }
+}
 
 export default function LoginScreen() {
   const theme = useAppStore((s) => s.theme)
@@ -38,6 +57,7 @@ export default function LoginScreen() {
               const me = await API.me()
               setUser(me.data)
               setAuthenticated(true)
+              postLoginRegistration()
               return
             } catch {
               // fall through to password entry
@@ -62,6 +82,7 @@ export default function LoginScreen() {
       await SecureStore.setItemAsync('last_username', username)
       setUser(d.user)
       setAuthenticated(true)
+      postLoginRegistration()
     } catch (e: any) {
       Alert.alert('Login failed', e?.response?.data?.detail || e?.message || 'Please check your credentials.')
     } finally {

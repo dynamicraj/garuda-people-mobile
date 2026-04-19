@@ -9,6 +9,7 @@ import Constants from 'expo-constants'
 import { useAppStore } from '../state/store'
 import { API } from '../api/client'
 import { enqueuePunch, pendingCount } from '../db'
+import { startBackgroundLocation, stopBackgroundLocation } from '../services/tasks'
 
 function uuid(): string {
   // Good enough for offline IDs; avoids adding a crypto dep.
@@ -53,6 +54,17 @@ export default function PunchScreen({ navigation }: any) {
     if (!svc) {
       Alert.alert('Turn on Location', 'Please enable location/GPS on your device.')
       return false
+    }
+    // Ask for background permission only when the user is punching IN — Play Store
+    // guidelines require background location prompts to be contextual.
+    if (!currentlyIn) {
+      const bg = await Location.requestBackgroundPermissionsAsync()
+      if (bg.status !== 'granted') {
+        Alert.alert(
+          'Background location recommended',
+          'Without "Allow all the time", your location will not be logged while the app is in the background. Attendance may be incomplete.'
+        )
+      }
     }
     if (!camPermission?.granted) {
       const r = await requestCamera()
@@ -113,6 +125,11 @@ export default function PunchScreen({ navigation }: any) {
           Alert.alert('Too soon', d.message || 'Please wait before punching again.')
         } else {
           setPunchState(punchType === 'in')
+          if (punchType === 'in') {
+            startBackgroundLocation().catch(() => {})
+          } else {
+            stopBackgroundLocation().catch(() => {})
+          }
           Alert.alert('Punched ' + punchType.toUpperCase(), 'Recorded successfully.')
         }
       } catch (e: any) {
