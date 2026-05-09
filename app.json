@@ -11,7 +11,7 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_PROJECT_ID",
+      "url": "https://u.expo.dev/ffc8476a-f23b-4a4f-a48f-9c3194d0904f",
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD",
       "enabled": true
@@ -36,6 +36,9 @@
         "NSPhotoLibraryUsageDescription": "Garuda People needs photo access to upload a profile picture.",
         "NSFaceIDUsageDescription": "Garuda People uses Face ID to unlock the app quickly.",
         "UIBackgroundModes": [
+          "fetch",
+          "location",
+          "remote-notification",
           "fetch",
           "location",
           "remote-notification"
@@ -64,7 +67,39 @@
         "USE_FINGERPRINT",
         "VIBRATE",
         "WAKE_LOCK",
-        "RECEIVE_BOOT_COMPLETED"
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "POST_NOTIFICATIONS",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ]
     },
     "web": {
@@ -103,8 +138,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "ffc8476a-f23b-4a4f-a48f-9c3194d0904f"
       }
-    }
+    },
+    "owner": "dynamicraj"
   }
 }
