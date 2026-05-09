@@ -11,10 +11,13 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/ffc8476a-f23b-4a4f-a48f-9c3194d0904f",
+      "url": "https://demo-hr.garudayantra.com/api/expo-updates/manifest?app=garuda-people",
       "fallbackToCacheTimeout": 0,
       "checkAutomatically": "ON_LOAD",
-      "enabled": true
+      "enabled": true,
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
     },
     "splash": {
       "image": "./assets/splash-icon.png",
